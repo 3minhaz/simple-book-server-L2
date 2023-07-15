@@ -20,6 +20,22 @@ const client = new MongoClient(uri, {
   },
 });
 
+const pick = (obj, keys) => {
+  const finalObj = {};
+  //   console.log("pic", obj, keys);
+  for (const key of keys) {
+    // console.log("from pick", Object.hasOwnProperty.call(obj, key));
+    // console.log("from pick", key);
+    // if (obj && Object.hasOwnProperty.call(obj, key)) {
+    if (obj && Object.hasOwnProperty.call(obj, key)) {
+      //   console.log("inside if", finalObj[key]);
+      finalObj[key] = obj[key];
+    }
+  }
+  //   console.log(finalObj);
+  return finalObj;
+};
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -44,10 +60,53 @@ async function run() {
     });
 
     app.get("/books", async (req, res) => {
+      const booksSearchableField = ["title", "author", "genre"];
+      const booksFilterableField = ["publicationDate", "genre"];
+      const filters = pick(req.query, booksSearchableField);
+      //   console.log("filters", filters);
+      const { searchTerm, publicationYear, genre } = req.query;
+      //   const { searchTerm, ...filtersData } = filters;
+      //   console.log("req.query", req.query);
+      console.log("filtersData", req.query);
+
+      const andConditions = [];
+
+      if (searchTerm || genre || publicationYear) {
+        andConditions.push({
+          $or: booksSearchableField.map((field) => ({
+            [field]: {
+              $regex: searchTerm,
+              $options: "i",
+            },
+          })),
+        });
+      } else if (genre || publicationYear) {
+        andConditions.push({
+          $or: booksSearchableField.map((field) => ({
+            [field]: {
+              $regex: searchTerm,
+              $options: "i",
+            },
+          })),
+        });
+      }
+
+      //   if (Object.keys(filtersData).length) {
+      //     andConditions.push({
+      //       $and: Object.entries(filtersData).map(([field, value]) => ({
+      //         [field]: value,
+      //       })),
+      //     });
+      //   }
+
+      const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
       const books = await booksCollection
-        .find({}, { projection: { email: 0 } })
+        .find(whereConditions, { projection: { email: 0 } })
         .sort({ _id: -1 })
         .toArray();
+      //   console.log(books);
       res.send(books);
     });
 
