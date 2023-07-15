@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 require("dotenv").config();
 
@@ -25,8 +25,37 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    await client.db("simple-book").command({ ping: 1 });
+    const db = client.db("simple-book");
     console.log("Successfully connected to MongoDB");
+
+    const booksCollection = db.collection("books");
+
+    app.get("/landing-page-books", async (req, res) => {
+      //   const books = await booksCollection
+      //     .find({}, { projection: { email: 0 } })
+      //     .toArray();
+      const books = await booksCollection
+        .find({}, { projection: { email: 0 } })
+        .sort({ _id: -1 })
+        .limit(10)
+        .toArray();
+      res.send(books);
+    });
+
+    app.get("/books", async (req, res) => {
+      const books = await booksCollection
+        .find({}, { projection: { email: 0 } })
+        .sort({ _id: -1 })
+        .toArray();
+      res.send(books);
+    });
+
+    app.get("/book/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await booksCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
