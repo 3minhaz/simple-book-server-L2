@@ -64,23 +64,14 @@ async function run() {
       const booksFilterableField = ["publicationDate", "genre"];
       const filters = pick(req.query, booksSearchableField);
       //   console.log("filters", filters);
-      const { searchTerm, publicationYear, genre } = req.query;
+      const { searchTerm } = req.query;
       //   const { searchTerm, ...filtersData } = filters;
       //   console.log("req.query", req.query);
       console.log("filtersData", req.query);
 
       const andConditions = [];
 
-      if (searchTerm || genre || publicationYear) {
-        andConditions.push({
-          $or: booksSearchableField.map((field) => ({
-            [field]: {
-              $regex: searchTerm,
-              $options: "i",
-            },
-          })),
-        });
-      } else if (genre || publicationYear) {
+      if (searchTerm) {
         andConditions.push({
           $or: booksSearchableField.map((field) => ({
             [field]: {
@@ -90,7 +81,6 @@ async function run() {
           })),
         });
       }
-
       //   if (Object.keys(filtersData).length) {
       //     andConditions.push({
       //       $and: Object.entries(filtersData).map(([field, value]) => ({
@@ -114,6 +104,29 @@ async function run() {
       const id = req.params.id;
       const result = await booksCollection.findOne({ _id: new ObjectId(id) });
       res.send(result);
+    });
+
+    // comment
+    app.post("/comment/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const comment = req.body.comment;
+
+      const findBook = await booksCollection.findOne({ _id: new ObjectId(id) });
+      const result = await booksCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $push: { comments: comment } }
+      );
+
+      if (result.modifiedCount !== 1) {
+        console.error("Product not found or comment not added");
+        res.json({ error: "Product not found or comment not added" });
+        return;
+      }
+
+      res.json({ message: "Comment added successfully" });
+      // console.log(id, "id ..");
+      console.log(comment, "data ..");
     });
   } finally {
     // Ensures that the client will close when you finish/error
