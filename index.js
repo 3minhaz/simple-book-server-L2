@@ -67,7 +67,7 @@ async function run() {
       const { searchTerm } = req.query;
       //   const { searchTerm, ...filtersData } = filters;
       //   console.log("req.query", req.query);
-      console.log("filtersData", req.query);
+      // console.log("filtersData", req.query);
 
       const andConditions = [];
 
@@ -103,6 +103,12 @@ async function run() {
     app.get("/book/:id", async (req, res) => {
       const id = req.params.id;
       const result = await booksCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
+    app.post("/create-book", async (req, res) => {
+      const body = req.body;
+      const result = await booksCollection.insertOne(body);
       res.send(result);
     });
 
