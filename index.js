@@ -106,27 +106,42 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/book-update/:id", async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const filter = await booksCollection.findOne({ _id: new ObjectId(id) });
+      const updateData = {
+        $set: data,
+      };
+      const result = await booksCollection.updateOne(filter, updateData);
+      res.send(result);
+    });
+
     // comment
+
     app.post("/comment/:id", async (req, res) => {
       const id = req.params.id;
 
-      const comment = req.body.comment;
-
+      const { comment, user } = req.body;
       const findBook = await booksCollection.findOne({ _id: new ObjectId(id) });
       const result = await booksCollection.updateOne(
         { _id: new ObjectId(id) },
-        { $push: { comments: comment } }
+        {
+          $push: {
+            comments: {
+              comment: comment,
+              email: user,
+            },
+          },
+        }
       );
 
       if (result.modifiedCount !== 1) {
-        console.error("Product not found or comment not added");
+        // console.error("Product not found or comment not added");
         res.json({ error: "Product not found or comment not added" });
         return;
       }
-
-      res.json({ message: "Comment added successfully" });
-      // console.log(id, "id ..");
-      console.log(comment, "data ..");
+      res.send(result);
     });
   } finally {
     // Ensures that the client will close when you finish/error
