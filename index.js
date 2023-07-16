@@ -117,6 +117,18 @@ async function run() {
       res.send(result);
     });
 
+    app.delete("/book-delete/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await booksCollection.deleteOne({ _id: new ObjectId(id) });
+      if (result.deletedCount === 1) {
+        res.send(result);
+      } else {
+        res.send({
+          error: "No documents matched the query. Deleted 0 documents.",
+        });
+      }
+    });
+
     // comment
 
     app.post("/comment/:id", async (req, res) => {
