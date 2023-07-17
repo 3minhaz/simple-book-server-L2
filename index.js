@@ -46,6 +46,7 @@ async function run() {
     console.log("Successfully connected to MongoDB");
 
     const booksCollection = db.collection("books");
+    const wishlistCollection = db.collection("wishlist");
 
     app.get("/landing-page-books", async (req, res) => {
       //   const books = await booksCollection
@@ -160,6 +161,30 @@ async function run() {
         return;
       }
       res.send(result);
+    });
+
+    // wishlist
+
+    app.post("/wishlist", async (req, res) => {
+      const data = req.body;
+      const exist = await wishlistCollection.findOne({
+        email: data.email,
+        bookId: { $in: [data.bookId] },
+      });
+      if (exist) {
+        res.send({ message: "Book already exist" });
+      } else {
+        const result = await wishlistCollection.updateOne(
+          { email: data.email },
+          {
+            $push: {
+              bookId: data.bookId,
+            },
+          },
+          { upsert: true }
+        );
+        res.send(result);
+      }
     });
   } finally {
     // Ensures that the client will close when you finish/error
