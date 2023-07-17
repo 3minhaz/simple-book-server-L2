@@ -165,6 +165,22 @@ async function run() {
 
     // wishlist
 
+    // get wishlist
+    app.get("/wishlist-get/:email", async (req, res) => {
+      const email = req.params.email;
+      const findBook = await wishlistCollection.findOne(
+        { email },
+        { bookId: 1 }
+      );
+      const bookIds = findBook?.bookId?.map((id) => new ObjectId(id));
+      if (findBook) {
+        const result = await booksCollection
+          .find({ _id: { $in: bookIds } })
+          .toArray();
+        res.send(result);
+      }
+    });
+
     app.post("/wishlist", async (req, res) => {
       const data = req.body;
       const exist = await wishlistCollection.findOne({
@@ -185,6 +201,19 @@ async function run() {
         );
         res.send(result);
       }
+    });
+
+    app.delete("/wishlist", async (req, res) => {
+      const { email, id } = req.query;
+      // const id = req.body;
+      const filter = { email };
+      const update = { $pull: { bookId: id } };
+      // const result = await wishlistCollection.updateOne({
+      //   email,
+      //   $pull: { bookId: id },
+      // });
+      const result = await wishlistCollection.updateOne(filter, update);
+      res.send(result);
     });
   } finally {
     // Ensures that the client will close when you finish/error
