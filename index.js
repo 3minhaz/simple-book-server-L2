@@ -4,7 +4,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
-const port = 5000;
+const port = 5000 || process.env.PORT;
 
 app.use(cors());
 app.use(express.json());
@@ -34,7 +34,8 @@ const pick = (obj, keys) => {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
+    client.connect();
     // Send a ping to confirm a successful connection
     await client.db("simple-book").command({ ping: 1 });
     const db = client.db("simple-book");
