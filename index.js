@@ -37,7 +37,7 @@ async function run() {
     // await client.connect();
     client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("simple-book").command({ ping: 1 });
+    // await client.db("simple-book").command({ ping: 1 });
     const db = client.db("simple-book");
     console.log("Successfully connected to MongoDB");
 
