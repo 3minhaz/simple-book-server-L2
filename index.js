@@ -22,17 +22,12 @@ const client = new MongoClient(uri, {
 
 const pick = (obj, keys) => {
   const finalObj = {};
-  //   console.log("pic", obj, keys);
   for (const key of keys) {
-    // console.log("from pick", Object.hasOwnProperty.call(obj, key));
-    // console.log("from pick", key);
-    // if (obj && Object.hasOwnProperty.call(obj, key)) {
     if (obj && Object.hasOwnProperty.call(obj, key)) {
-      //   console.log("inside if", finalObj[key]);
       finalObj[key] = obj[key];
     }
   }
-  //   console.log(finalObj);
+
   return finalObj;
 };
 
@@ -65,11 +60,8 @@ async function run() {
       const booksSearchableField = ["title", "author", "genre"];
       const booksFilterableField = ["publicationDate", "genre"];
       const filters = pick(req.query, booksSearchableField);
-      //   console.log("filters", filters);
+
       const { searchTerm } = req.query;
-      //   const { searchTerm, ...filtersData } = filters;
-      //   console.log("req.query", req.query);
-      // console.log("filtersData", req.query);
 
       const andConditions = [];
 
@@ -98,7 +90,6 @@ async function run() {
         .find(whereConditions, { projection: { email: 0 } })
         .sort({ _id: -1 })
         .toArray();
-      //   console.log(books);
       res.send(books);
     });
 
@@ -157,7 +148,6 @@ async function run() {
       );
 
       if (result.modifiedCount !== 1) {
-        // console.error("Product not found or comment not added");
         res.json({ error: "Product not found or comment not added" });
         return;
       }
@@ -219,6 +209,33 @@ async function run() {
 
     // reading books
 
+    app.get("/reading-list/:email", async (req, res) => {
+      const email = req.params.email;
+      const findBook = await readingCollection.findOne({ email });
+
+      if (findBook) {
+        const bookId = await findBook?.bookInfo?.map(
+          (book) => new ObjectId(book.bookId)
+        );
+        const result = await booksCollection
+          .find({
+            _id: { $in: bookId },
+          })
+          .toArray();
+
+        result.forEach((secondItem) => {
+          findBook?.bookInfo?.find((info) => {
+            if (info?.bookId === secondItem._id.toString()) {
+              secondItem.status = info.status;
+            }
+          });
+        });
+        res.send(result);
+      } else {
+        res.send({ message: "You don't have any book to read" });
+      }
+    });
+
     app.post("/reading-list", async (req, res) => {
       const body = req.body;
       const filter = req.body.email;
@@ -226,7 +243,6 @@ async function run() {
         email: filter,
         "bookInfo.bookId": body.bookInfo.bookId,
       });
-      console.log(exist);
       if (exist) {
         res.send({ message: "Already added to read soon" });
       } else {
@@ -237,9 +253,25 @@ async function run() {
           { $push: { bookInfo: body.bookInfo } },
           { upsert: true }
         );
-        // console.log(body);
         res.send(result);
       }
+    });
+
+    app.patch("/reading-status-update/:email", async (req, res) => {
+      const email = req.params.email;
+      // const body = req.body;
+      // const filter = { email };
+      // const updateStatus = { "bookInfo.bookId": req.body.id };
+
+      const result = await readingCollection.updateOne(
+        {
+          email,
+          "bookInfo.bookId": req.body.id,
+        },
+        { $set: { "bookInfo.$.status": req.body.status } }
+      );
+
+      res.send(result);
     });
   } finally {
     // Ensures that the client will close when you finish/error
