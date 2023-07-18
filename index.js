@@ -75,13 +75,6 @@ async function run() {
           })),
         });
       }
-      //   if (Object.keys(filtersData).length) {
-      //     andConditions.push({
-      //       $and: Object.entries(filtersData).map(([field, value]) => ({
-      //         [field]: value,
-      //       })),
-      //     });
-      //   }
 
       const whereConditions =
         andConditions.length > 0 ? { $and: andConditions } : {};
@@ -169,6 +162,8 @@ async function run() {
           .find({ _id: { $in: bookIds } })
           .toArray();
         res.send(result);
+      } else {
+        res.send({ message: "You don't have any book in wishlist" });
       }
     });
 
