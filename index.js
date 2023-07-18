@@ -47,6 +47,7 @@ async function run() {
 
     const booksCollection = db.collection("books");
     const wishlistCollection = db.collection("wishlist");
+    const readingCollection = db.collection("reading");
 
     app.get("/landing-page-books", async (req, res) => {
       //   const books = await booksCollection
@@ -214,6 +215,31 @@ async function run() {
       // });
       const result = await wishlistCollection.updateOne(filter, update);
       res.send(result);
+    });
+
+    // reading books
+
+    app.post("/reading-list", async (req, res) => {
+      const body = req.body;
+      const filter = req.body.email;
+      const exist = await readingCollection.findOne({
+        email: filter,
+        "bookInfo.bookId": body.bookInfo.bookId,
+      });
+      console.log(exist);
+      if (exist) {
+        res.send({ message: "Already added to read soon" });
+      } else {
+        const result = await readingCollection.updateOne(
+          {
+            email: body.email,
+          },
+          { $push: { bookInfo: body.bookInfo } },
+          { upsert: true }
+        );
+        // console.log(body);
+        res.send(result);
+      }
     });
   } finally {
     // Ensures that the client will close when you finish/error
